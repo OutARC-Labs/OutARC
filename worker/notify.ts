@@ -1,0 +1,1 @@
+export async function notifyDiscord(msg: string) { /* TODO Day 2 */ }

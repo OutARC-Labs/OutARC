@@ -1,0 +1,1 @@
+export async function applyToJob(page: any, url: string, cl: string) { /* TODO Day 2 */ }
