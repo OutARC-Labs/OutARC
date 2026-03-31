@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ['@prisma/client', '.prisma/client', 'pdf-parse', 'ioredis', 'bullmq'],
 };
 
 export default nextConfig;
