@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "worker": "tsx --env-file=.env worker/index.ts",
+    "worker": "tsx worker/index.ts",
     "worker:dev": "tsx watch worker/index.ts"
   },
   "dependencies": {
