@@ -18,8 +18,14 @@ export async function POST(request: Request) {
     return Response.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const payload = JSON.stringify({ email: parsed.data.email, password: parsed.data.password })
-  const encrypted = encrypt(payload)
+  let encrypted: string
+  try {
+    const payload = JSON.stringify({ email: parsed.data.email, password: parsed.data.password })
+    encrypted = encrypt(payload)
+  } catch (e) {
+    console.error('Encryption failed:', e)
+    return Response.json({ error: 'Encryption unavailable — check AES_ENCRYPTION_KEY' }, { status: 500 })
+  }
 
   await prisma.user.update({
     where: { id: session.user.id },

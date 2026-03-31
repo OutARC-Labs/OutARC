@@ -5,8 +5,8 @@ import { z } from 'zod'
 const profileSchema = z.object({
   major: z.string().max(100).optional(),
   gradYear: z.number().int().min(2020).max(2035).nullable().optional(),
-  linkedin: z.string().url().or(z.literal('')).optional(),
-  github: z.string().url().or(z.literal('')).optional(),
+  linkedin: z.string().max(500).optional(),
+  github: z.string().max(500).optional(),
 })
 
 export async function GET() {

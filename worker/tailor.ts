@@ -36,9 +36,9 @@ function buildUserPrompt(job: ScrapedJob, resumeText: string): string {
 ${resumeText}
 
 JOB:
-Title: ${job.title}
+Title: ${job.jobTitle}
 Company: ${job.company}
-Description: ${job.description}
+Description: ${job.jobDescription}
 
 Return JSON with coverLetter and resumeBullets (array of {original, rewritten}).`
 }
@@ -112,7 +112,7 @@ export async function tailorApplication(
       // Ensure resumeBullets has the right shape
       const bullets = parsed.resumeBullets.map((b: any) => ({
         original: b.original || '',
-        rewritten: b.rewritten || b.rewritten || '',
+        rewritten: b.rewritten || '',
       }))
 
       return {

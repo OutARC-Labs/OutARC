@@ -50,9 +50,9 @@ export default function ProfileForm({ user, resumes: initialResumes }: ProfileFo
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           major: form.major,
-          gradYear: form.gradYear ? parseInt(form.gradYear) : null,
-          linkedin: form.linkedin,
-          github: form.github,
+          gradYear: form.gradYear.trim() ? parseInt(form.gradYear, 10) || null : null,
+          linkedin: form.linkedin.trim(),
+          github: form.github.trim(),
         }),
       })
       if (!res.ok) throw new Error()
