@@ -1,6 +1,7 @@
 import { Queue } from 'bullmq'
-import { Redis } from 'ioredis'
+import IORedis from 'ioredis'
 
+// All queue jobs must match this shape
 export interface ApplicationJob {
   userId: string
   jobTitle: string
@@ -9,7 +10,7 @@ export interface ApplicationJob {
   handshakeUrl: string
 }
 
-export const connection = new Redis(process.env.REDIS_URL as string, {
+export const connection = new IORedis(process.env.REDIS_URL!, {
   maxRetriesPerRequest: null,
 })
 
