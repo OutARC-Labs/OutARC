@@ -1,24 +1,32 @@
 import crypto from 'crypto'
 
 const ALGORITHM = 'aes-256-gcm'
-const KEY = Buffer.from(process.env.AES_ENCRYPTION_KEY!, 'hex')
+const KEY_HEX = process.env.AES_ENCRYPTION_KEY!
 
-export function encrypt(plaintext: string): string {
-  const iv = crypto.randomBytes(12)
-  const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv)
-  let encrypted = cipher.update(plaintext, 'utf8', 'hex')
-  encrypted += cipher.final('hex')
-  const authTag = cipher.getAuthTag()
-  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`
+function getKey(): Buffer {
+  if (!KEY_HEX || KEY_HEX.length !== 64) {
+    throw new Error('AES_ENCRYPTION_KEY must be a 64-char hex string (32 bytes)')
+  }
+  return Buffer.from(KEY_HEX, 'hex')
 }
 
-export function decrypt(ciphertext: string): string {
-  const [ivHex, authTagHex, encrypted] = ciphertext.split(':')
+export function encrypt(plaintext: string): string {
+  const key = getKey()
+  const iv = crypto.randomBytes(12)
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+  const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()])
+  const authTag = cipher.getAuthTag()
+  // Format: iv:authTag:ciphertext (all hex)
+  return [iv.toString('hex'), authTag.toString('hex'), encrypted.toString('hex')].join(':')
+}
+
+export function decrypt(encoded: string): string {
+  const key = getKey()
+  const [ivHex, authTagHex, encryptedHex] = encoded.split(':')
   const iv = Buffer.from(ivHex, 'hex')
   const authTag = Buffer.from(authTagHex, 'hex')
-  const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv)
+  const encrypted = Buffer.from(encryptedHex, 'hex')
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
   decipher.setAuthTag(authTag)
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8')
-  decrypted += decipher.final('utf8')
-  return decrypted
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8')
 }
