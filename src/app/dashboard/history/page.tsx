@@ -25,7 +25,7 @@ export default async function HistoryPage() {
   })
 
   // Serialize for client component
-  const serializedApps = applications.map((app) => ({
+  const serializedApps = applications.map((app: any) => ({
     ...app,
     appliedAt: app.appliedAt?.toISOString() ?? null,
     resumeBulletsUsed: app.resumeBulletsUsed as { original: string; rewritten: string }[] | null,

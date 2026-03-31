@@ -28,7 +28,7 @@ async function loadCookies(context: BrowserContext, userId: string): Promise<boo
 async function isSessionValid(context: BrowserContext): Promise<boolean> {
   const page = await context.newPage()
   try {
-    await page.goto('https://app.joinhandshake.com/stu', { waitUntil: 'networkidle' })
+    await page.goto('https://app.joinhandshake.com/stu', { waitUntil: 'load' })
     await pageLoadDelay()
     const url = page.url()
     return !url.includes('/login') && !url.includes('/users/sign_in')
@@ -45,17 +45,24 @@ async function loginFresh(
 ): Promise<void> {
   const page = await context.newPage()
   console.log('[Auth] Logging in fresh...')
-  await page.goto('https://app.joinhandshake.com/login', { waitUntil: 'networkidle' })
+  await page.goto('https://app.joinhandshake.com/login', { waitUntil: 'load', timeout: 60000 })
   await pageLoadDelay()
   await humanDelay()
-  await page.click('text=Sign in with email')
+
+  const emailInput = page.locator('input[type="email"], input[name="email"], input[placeholder*="email" i]').first()
+
+  if (await emailInput.count() === 0) {
+    const signInBtn = page.locator('a:has-text("email"), button:has-text("email"), [data-ref="email"]').first()
+    await signInBtn.click({ timeout: 10000 })
+    await humanDelay(1000, 2000)
+  }
+
+  await humanType(page, 'input[type="email"], input[name="email"]', email)
   await humanDelay()
-  await humanType(page, 'input[type="email"]', email)
-  await humanDelay()
-  await humanType(page, 'input[type="password"]', password)
+  await humanType(page, 'input[type="password"], input[name="password"]', password)
   await humanDelay(800, 1500)
   await page.click('button[type="submit"]')
-  await page.waitForURL('**/stu**', { timeout: 15000 })
+  await page.waitForURL('**/stu**', { timeout: 30000 })
   await pageLoadDelay()
   await saveCookies(context, userId)
   await page.close()

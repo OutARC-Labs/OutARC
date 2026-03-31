@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma as any),
+  session: { strategy: 'jwt' },
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -16,13 +17,16 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user }) {
-      // Only allow @wisc.edu emails
       if (!user.email?.endsWith('@wisc.edu')) return false
       return true
     },
-    async session({ session, user }) {
+    async jwt({ token, user }) {
+      if (user) token.id = user.id
+      return token
+    },
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = user.id
+        session.user.id = token.id as string
       }
       return session
     },
