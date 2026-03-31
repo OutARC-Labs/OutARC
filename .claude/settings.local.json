@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv \"C:/Users/rithi/outarc/src/app/\\(dashboard\\)/dashboard/page.tsx\" \"C:/Users/rithi/outarc/src/app/\\(dashboard\\)/page.tsx\")",
+      "Bash(rmdir \"C:/Users/rithi/outarc/src/app/\\(dashboard\\)/dashboard\")",
+      "Bash(ls:*)",
+      "Bash(mkdir -p dashboard)",
+      "Bash(mv \"\\(dashboard\\)/page.tsx\" dashboard/)",
+      "Bash(mv \"\\(dashboard\\)/layout.tsx\" dashboard/)",
+      "Bash(mv \"\\(dashboard\\)/profile\" dashboard/)",
+      "Bash(mv \"\\(dashboard\\)/filters\" dashboard/)",
+      "Bash(npx tsx:*)",
+      "Bash(node:*)",
+      "Bash(\"C:/Users/rithi/outarc/.env.local\":*)",
+      "Bash(git -C C:/Users/rithi/outarc log --oneline d2a617a --format=\"%H %s\" -1)",
+      "Bash(git -C C:/Users/rithi/outarc diff 42271ad..d2a617a --name-only)",
+      "Bash(\"C:/Users/rithi/outarc/ProjectDetails/day2-manual-testing-checklist.md\":*)",
+      "Bash(git:*)"
+    ]
+  }
+}

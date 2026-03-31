@@ -1,0 +1,379 @@
+OutARC
+Person B — Day 1 Walkthrough
+Branch: feat/b-prisma | Base: dev | Goal: Database, queue, encryption, worker stubs all wired and tested
+end-to-end.
+νν Day 1 is DONE when: Railway Postgres is migrated → Redis queue accepts a job → Worker logs it →
+Person A has the .env.local values.
+Phase 1 — Finish Day 0 Infra (do these first)
+These are blockers. Person A cannot start Day 1 without them.
+1
+A
+Create Railway Project
+Go to railway.app → New Project → Empty Project → name it outarc
+1. Click + New → Database → PostgreSQL → wait for provisioning
+2. Click + New → Database → Redis → wait for provisioning
+3. Click Postgres service → Variables tab → copy DATABASE_URL
+4. Click Redis service → Variables tab → copy REDIS_URL
+1
+B
+Create Google OAuth Credentials
+Go to console.cloud.google.com → New Project → name it outarc
+APIs & Services → Credentials → Create Credentials → OAuth 2.0 Client ID → Web Application
+Authorized redirect URI:
+http://localhost:3000/api/auth/callback/google
+Save the Client ID and Client Secret. Share with Person A.
+ν Person A needs this to start NextAuth on Day 1
+----------------Page (0) Break----------------
+1
+C
+Create Discord Webhook
+In your Discord server: Edit Channel → Integrations → Webhooks → New Webhook
+Name it OutARC Bot → assign to a channel → copy the Webhook URL
+This becomes DISCORD_WEBHOOK_URL in .env.local
+1
+D
+Generate Secrets (run in terminal)
+# NEXTAUTH_SECRET
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+# AES_ENCRYPTION_KEY
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+# WORKER_SECRET
+node -e "console.log(require('crypto').randomBytes(20).toString('hex'))"
+1
+E
+Fill .env.local and share with Person A
+DATABASE_URL=postgresql://... # from Railway
+REDIS_URL=redis://... # from Railway
+NEXTAUTH_SECRET=<generated> # step 1D
+NEXTAUTH_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=<from Google Console>
+GOOGLE_CLIENT_SECRET=<from Google Console>
+AES_ENCRYPTION_KEY=<generated> # step 1D
+DISCORD_WEBHOOK_URL=<from Discord>
+OPENCLAW_API_KEY=<from OpenRouter>
+WORKER_SECRET=<generated> # step 1D
+νν Never commit .env.local — share via private DM or password manager only.
+Phase 2 — Create Branch
+2        Checkout feat/b-prisma from dev
+git checkout dev
+git pull origin dev
+git checkout -b feat/b-prisma
+----------------Page (1) Break----------------
+Phase 3 — Prisma: Schema + Migration
+3
+A
+Init Prisma
+npx prisma init
+This creates prisma/schema.prisma and adds DATABASE_URL to .env (use .env.local instead).
+3
+B
+Paste Full Schema into prisma/schema.prisma
+generator client {
+provider = "prisma-client-js"
+}
+datasource db {
+provider = "postgresql"
+url = env("DATABASE_URL")
+}
+model User {
+id String @id @default(cuid())
+email String @unique
+name String?
+image String?
+major String?
+gradYear Int?
+linkedin String?
+github String?
+handshakeCredEnc String?
+createdAt DateTime @default(now())
+resumes Resume[]
+filters JobFilter[]
+applications Application[]
+accounts Account[]
+sessions Session[]
+}
+model Account {
+id String @id @default(cuid())
+userId String
+type String
+provider String
+providerAccountId String
+refresh_token String? @db.Text
+access_token String? @db.Text
+expires_at Int?
+token_type String?
+scope String?
+id_token String? @db.Text
+session_state String?
+user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+----------------Page (2) Break----------------
+@@unique([provider, providerAccountId])
+}
+model Session {
+id String @id @default(cuid())
+sessionToken String @unique
+userId String
+expires DateTime
+user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model VerificationToken {
+identifier String
+token String @unique
+expires DateTime
+@@unique([identifier, token])
+}
+model Resume {
+id String @id @default(cuid())
+userId String
+user User @relation(fields: [userId], references: [id])
+filename String
+url String
+parsedText String?
+isActive Boolean @default(true)
+uploadedAt DateTime @default(now())
+}
+model JobFilter {
+id String @id @default(cuid())
+userId String
+user User @relation(fields: [userId], references: [id])
+keywords String[]
+excludeCompanies String[]
+roles String[]
+maxPerDay Int @default(10)
+isActive Boolean @default(true)
+}
+model Application {
+id String @id @default(cuid())
+userId String
+user User @relation(fields: [userId], references: [id])
+jobTitle String
+company String
+handshakeUrl String
+coverLetterUsed String
+resumeBulletsUsed Json?
+status String @default("QUEUED")
+failureReason String?
+appliedAt DateTime?
+createdAt DateTime @default(now())
+}
+----------------Page (3) Break----------------
+3
+C
+Run Migration
+npx prisma migrate dev --name init
+npx prisma generate
+Verify in Railway's database viewer that all tables were created (User, Account, Session, Resume, JobFilter,
+Application, VerificationToken).
+Phase 4 — Library Files
+4
+A
+src/lib/prisma.ts — Singleton client
+import { PrismaClient } from '@prisma/client'
+const globalForPrisma = globalThis as unknown as {
+prisma: PrismaClient | undefined
+}
+export const prisma =
+globalForPrisma.prisma ??
+new PrismaClient({
+log: process.env.NODE_ENV === 'development' ? ['query'] : [],
+})
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+4
+B
+src/lib/queue.ts — ApplicationJob interface + BullMQ queue
+import { Queue } from 'bullmq'
+import IORedis from 'ioredis'
+// All queue jobs must match this shape
+export interface ApplicationJob {
+userId: string
+jobTitle: string
+company: string
+jobDescription: string
+handshakeUrl: string
+}
+export const connection = new IORedis(process.env.REDIS_URL!, {
+maxRetriesPerRequest: null,
+})
+export const applicationQueue = new Queue('application', {
+----------------Page (4) Break----------------
+connection,
+defaultJobOptions: {
+attempts: 3,
+backoff: { type: 'exponential', delay: 5000 },
+removeOnComplete: 100,
+removeOnFail: 200,
+},
+})
+4
+C
+src/lib/encrypt.ts — AES-256-GCM
+Used by both the Next.js API and the worker. Never log decrypted values.
+import crypto from 'crypto'
+const ALGORITHM = 'aes-256-gcm'
+const KEY = Buffer.from(process.env.AES_ENCRYPTION_KEY!, 'hex')
+export function encrypt(plaintext: string): string {
+const iv = crypto.randomBytes(12)
+const cipher = crypto.createCipheriv(ALGORITHM, KEY, iv)
+let encrypted = cipher.update(plaintext, 'utf8', 'hex')
+encrypted += cipher.final('hex')
+const authTag = cipher.getAuthTag()
+return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`
+}
+export function decrypt(ciphertext: string): string {
+const [ivHex, authTagHex, encrypted] = ciphertext.split(':')
+const iv = Buffer.from(ivHex, 'hex')
+const authTag = Buffer.from(authTagHex, 'hex')
+const decipher = crypto.createDecipheriv(ALGORITHM, KEY, iv)
+decipher.setAuthTag(authTag)
+let decrypted = decipher.update(encrypted, 'hex', 'utf8')
+decrypted += decipher.final('utf8')
+return decrypted
+}
+Phase 5 — API Routes (Person B owns these)
+5
+A
+POST /api/jobs/trigger — enqueue a run
+Triggered by the frontend 'Start Applying' button. Reads active filter, enqueues job, rate-limits at 5 active jobs.
+// src/app/api/jobs/trigger/route.ts
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+----------------Page (5) Break----------------
+import { prisma } from '@/lib/prisma'
+import { applicationQueue, ApplicationJob } from '@/lib/queue'
+export async function POST(req: NextRequest) {
+const session = await getServerSession()
+if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+// Rate limit: max 5 queued/active jobs
+const activeCount = await prisma.application.count({
+where: { userId: user.id, status: { in: ['QUEUED', 'ACTIVE'] } }
+})
+if (activeCount >= 5) return NextResponse.json({ error: 'Rate limit' }, { status: 429 })
+const filter = await prisma.jobFilter.findFirst({
+where: { userId: user.id, isActive: true }
+})
+if (!filter) return NextResponse.json({ error: 'No active filter' }, { status: 400 })
+const job = await applicationQueue.add('SCRAPE_AND_APPLY', {
+userId: user.id,
+jobTitle: '', company: '', jobDescription: '', handshakeUrl: ''
+} as ApplicationJob)
+return NextResponse.json({ jobId: job.id })
+}
+5
+B
+GET /api/jobs/status — queue status
+// src/app/api/jobs/status/route.ts
+import { NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { prisma } from '@/lib/prisma'
+export async function GET() {
+const session = await getServerSession()
+if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+const user = await prisma.user.findUnique({ where: { email: session.user.email } })
+if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+const [queued, active, completed, failed] = await Promise.all([
+prisma.application.count({ where: { userId: user.id, status: 'QUEUED' } }),
+prisma.application.count({ where: { userId: user.id, status: 'ACTIVE' } }),
+prisma.application.count({ where: { userId: user.id, status: 'APPLIED' } }),
+prisma.application.count({ where: { userId: user.id, status: 'FAILED' } }),
+])
+return NextResponse.json({ queued, active, completed, failed })
+}
+----------------Page (6) Break----------------
+Phase 6 — Worker Files
+The worker is a separate process — never import worker code into Next.js pages.
+6
+A
+worker/index.ts — entry file
+import { Worker, Job } from 'bullmq'
+import { connection } from '../src/lib/queue'
+console.log('[OutARC Worker] Starting...')
+const worker = new Worker(
+'application',
+async (job: Job) => {
+console.log(`[Worker] Processing job ${job.id} — ${job.name}`)
+console.log('[Worker] Job data:', JSON.stringify(job.data, null, 2))
+// TODO Day 2: wire tailor → scrape → apply → notify
+},
+{ connection, concurrency: 1 }
+)
+worker.on('completed', (job) => console.log(`[Worker] Job ${job.id} completed`))
+worker.on('failed', (job, err) => console.error(`[Worker] Job ${job?.id} failed: ${err.message}`))
+6
+B
+worker/tailor.ts — stub (Person A replaces on Day 2)
+export interface TailorResult {
+coverLetter: string
+resumeBullets: string[]
+}
+export async function tailorApplication(
+jobData: { jobTitle: string; company: string; jobDescription: string },
+resumeText: string
+): Promise<TailorResult> {
+// TODO Day 2: replace with real OpenClaw call
+return {
+coverLetter: `Mock cover letter for ${jobData.company}`,
+resumeBullets: ['Mock bullet 1', 'Mock bullet 2', 'Mock bullet 3']
+}
+}
+6
+C
+Remaining worker stubs
+----------------Page (7) Break----------------
+Create these files with a single line each for now:
+// worker/notify.ts
+export async function notifyDiscord(msg: string) { /* TODO Day 2 */ }
+// worker/handshake-auth.ts
+export async function loginToHandshake(email: string, pw: string) { /* TODO Day 2 */ }
+// worker/handshake-scrape.ts
+export async function scrapeHandshake(filters: any) { /* TODO Day 2 */ }
+// worker/handshake-apply.ts
+export async function applyToJob(page: any, url: string, cl: string) { /* TODO Day 2 */ }
+Phase 7 — OpenClaw Config
+7
+A
+openclaw.json
+{
+"model": "anthropic/claude-haiku-4-5",
+"provider": "openrouter",
+"skills": ["./openclaw-skills/tailor.skill.md"],
+"maxTokens": 2000,
+"temperature": 0.4
+}
+7
+B
+openclaw-skills/tailor.skill.md
+# Tailor Resume + Cover Letter
+Given a resume and job description, return JSON:
+{
+"bullets": ["bullet 1", "bullet 2", "bullet 3"],
+"coverLetter": "full cover letter text"
+}
+Rules:
+- Each bullet: action verb, under 20 words, metric if possible
+- Cover letter: 3 paragraphs, under 250 words, sounds like a real student
+- Never use "I am excited to" or "I would be a great fit"
+Phase 8 — Test Queue End-to-End
+----------------Page (8) Break----------------
+8        Two terminals — run both simultaneously
+Terminal 1 — Next.js dev server:
+npm run dev
+Terminal 2 — Worker process:
+npx ts-node worker/index.ts
+Terminal 3 (or Postman) — Trigger a job:
+curl -X POST http://localhost:3000/api/jobs/trigger
+ν Success looks like: job appears in Redis → Terminal 2 logs 'Processing job ...' → Worker logs the job
+data.
+Phase 9 — Commit & PR
+git add .
+git commit -m "feat: prisma schema, queue, encrypt, worker stubs, api routes"
+git push origin feat/b-prisma
+Open a PR on GitHub: feat/b-prisma → dev. Tag Person A to review.
+ν End of Day 1 Sync Checkpoint (~6pm)
+3 Both merge branches to dev — Person A merges feat/a-auth, Person B merges feat/b-prisma.
+3 B walks A through the Prisma schema verbally — every field, every relation.
+3 A shares API route signatures so B knows what the worker will call on Day 2.
+3 Day 1 is DONE when: Login works → Dashboard loads → Profile saves to DB → Queue accepts a job →
+Worker logs it.
+----------------Page (9) Break----------------

@@ -1,0 +1,2190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OutARC — Master Todo & Workflow</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,300;0,600;0,800;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f5f0;
+  --surface: #ffffff;
+  --surface2: #f0ede6;
+  --border: #ddd9d0;
+  --border2: #e8e4dc;
+  --text: #1a1814;
+  --muted: #7a7568;
+  --muted2: #b0aba0;
+  --a-color: #2d5be3;
+  --a-bg: #eef2fd;
+  --a-border: #b8c8f8;
+  --b-color: #c0392b;
+  --b-bg: #fdf0ee;
+  --b-border: #f0c4be;
+  --done-color: #2a7a4a;
+  --done-bg: #edf7f1;
+  --warn-color: #b37a10;
+  --warn-bg: #fdf6e3;
+  --warn-border: #f0dfa0;
+  --day1: #2d5be3;
+  --day2: #9b2d9b;
+  --day3: #1a8a52;
+  --pre-bg: #1a1814;
+  --pre-text: #e8e4dc;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── HEADER ── */
+.master-header {
+  background: var(--text);
+  color: var(--bg);
+  padding: 56px 72px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.master-header::after {
+  content: 'OutARC';
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Fraunces', serif;
+  font-size: 180px;
+  font-weight: 800;
+  color: rgba(255,255,255,0.04);
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.doc-type {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  margin-bottom: 20px;
+}
+
+.master-header h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -2px;
+  margin-bottom: 16px;
+}
+
+.master-header h1 em {
+  font-style: italic;
+  font-weight: 300;
+  color: var(--muted2);
+}
+
+.header-sub {
+  font-size: 15px;
+  color: var(--muted2);
+  max-width: 480px;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.header-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  padding: 5px 14px;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 100px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.5);
+}
+
+.pill.a { border-color: rgba(45,91,227,0.5); color: #7a9aff; }
+.pill.b { border-color: rgba(192,57,43,0.5); color: #f09080; }
+
+/* ── LEGEND + STATS BAR ── */
+.stats-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 72px;
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.legend-dot {
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.stat-divider { width: 1px; height: 24px; background: var(--border); }
+
+.stat-item {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.stat-item strong {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'Fraunces', serif;
+  display: block;
+  line-height: 1;
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: calc(100vh - 200px);
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 32px 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+}
+
+.sidebar-section {
+  padding: 0 24px;
+  margin-bottom: 28px;
+}
+
+.sidebar-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  margin-bottom: 2px;
+}
+
+.sidebar-link:hover { background: var(--surface2); color: var(--text); }
+.sidebar-link.active { background: var(--a-bg); color: var(--a-color); font-weight: 500; }
+
+.sidebar-link .count {
+  margin-left: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--muted2);
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 24px;
+}
+
+/* ── MAIN CONTENT ── */
+.main {
+  padding: 0;
+}
+
+/* ── PHASE HEADER ── */
+.phase-header {
+  padding: 40px 56px 32px;
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+
+.phase-eyebrow {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  margin-bottom: 8px;
+}
+
+.phase-title {
+  font-family: 'Fraunces', serif;
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  line-height: 1.1;
+}
+
+/* ── DAY SECTION ── */
+.day-section {
+  padding: 0 56px 60px;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 36px 0 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+
+.day-badge {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.day-badge.d1 { background: #e8eeff; color: var(--day1); }
+.day-badge.d2 { background: #f5e8f5; color: var(--day2); }
+.day-badge.d3 { background: #e8f5ee; color: var(--day3); }
+
+.day-info { flex: 1; }
+.day-title {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.day-subtitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: 0.5px;
+}
+
+.day-progress {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--muted2);
+  text-align: right;
+}
+
+/* ── PERSONS GRID ── */
+.persons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+/* ── PERSON COLUMN ── */
+.person-col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.person-header-bar {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.person-header-bar.a { background: var(--a-bg); border-bottom-color: var(--a-border); }
+.person-header-bar.b { background: var(--b-bg); border-bottom-color: var(--b-border); }
+
+.person-avatar {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px;
+  flex-shrink: 0;
+}
+.person-avatar.a { background: var(--a-color); color: white; }
+.person-avatar.b { background: var(--b-color); color: white; }
+
+.person-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.person-name.a { color: var(--a-color); }
+.person-name.b { color: var(--b-color); }
+
+.person-role {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* ── TASK GROUP ── */
+.task-group {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border2);
+}
+
+.task-group:last-child { border-bottom: none; }
+
+.task-group-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.task-group-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border2);
+}
+
+/* ── TASK ITEM ── */
+.task {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 6px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.task:hover { background: var(--surface2); }
+
+.task:last-child { margin-bottom: 0; }
+
+.task-box {
+  width: 15px; height: 15px;
+  border-radius: 3px;
+  border: 1.5px solid var(--border);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.task.a .task-box { border-color: var(--a-color); }
+.task.b .task-box { border-color: var(--b-color); }
+.task.shared .task-box { border-color: var(--done-color); }
+
+.task-content { flex: 1; }
+
+.task-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 2px;
+}
+
+.task-detail {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.task-detail code {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  background: var(--surface2);
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--text);
+}
+
+.task-tags {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.task-tag {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.task-tag.critical { border-color: #f0c4be; color: var(--b-color); background: var(--b-bg); }
+.task-tag.blocker { border-color: var(--warn-border); color: var(--warn-color); background: var(--warn-bg); }
+.task-tag.easy { border-color: #c4e8d4; color: var(--done-color); background: var(--done-bg); }
+.task-tag.shared2 { border-color: #c4cef8; color: var(--a-color); background: var(--a-bg); }
+
+/* ── SYNC BLOCK ── */
+.sync-block {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.sync-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--warn-color);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync-item {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 6px;
+  align-items: flex-start;
+}
+.sync-item::before { content: '→'; color: var(--warn-color); font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; }
+
+/* ── INTEGRATION BLOCK ── */
+.integration-block {
+  background: var(--done-bg);
+  border: 1px solid #b8e0c8;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+}
+
+.integration-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--done-color);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.integration-item {
+  display: flex;
+  gap: 10px;
+  font-size: 13px;
+  margin-bottom: 6px;
+  align-items: flex-start;
+}
+.integration-item::before { content: '✓'; color: var(--done-color); font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; }
+
+/* ── NOTE BLOCK ── */
+.note-block {
+  background: var(--a-bg);
+  border: 1px solid var(--a-border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  font-size: 12px;
+  color: var(--a-color);
+  line-height: 1.6;
+}
+.note-block strong { font-weight: 600; }
+
+/* ── CODE SNIPPET ── */
+.code-snip {
+  background: var(--pre-bg);
+  color: var(--pre-text);
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 10px 0;
+  overflow-x: auto;
+}
+
+.code-snip .kw { color: #7a9aff; }
+.code-snip .str { color: #88d8a0; }
+.code-snip .cmt { color: #5a5850; }
+.code-snip .fn { color: #ffd080; }
+.code-snip .num { color: #ff9070; }
+
+/* ── WORKFLOW SECTION ── */
+.workflow-section {
+  padding: 40px 56px 60px;
+  border-top: 2px solid var(--border);
+}
+
+.workflow-title {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+}
+
+.workflow-sub {
+  color: var(--muted);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+/* ── WORKFLOW STEPS ── */
+.workflow-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.wf-step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border2);
+}
+
+.wf-step:last-child { border-bottom: none; }
+
+.wf-num {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.wf-num.a { border-color: var(--a-color); color: var(--a-color); background: var(--a-bg); }
+.wf-num.b { border-color: var(--b-color); color: var(--b-color); background: var(--b-bg); }
+.wf-num.shared { border-color: var(--done-color); color: var(--done-color); background: var(--done-bg); }
+
+.wf-content {}
+.wf-title { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.wf-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.wf-who {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  margin-top: 6px;
+}
+.wf-who.a { color: var(--a-color); }
+.wf-who.b { color: var(--b-color); }
+.wf-who.shared { color: var(--done-color); }
+
+/* ── FULL-WIDTH SECTIONS ── */
+.full-section {
+  padding: 40px 56px;
+  border-top: 1px solid var(--border);
+}
+
+.full-section h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  margin-bottom: 6px;
+}
+
+.full-section .section-sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 28px;
+}
+
+/* ── ENV TABLE ── */
+.env-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+.env-table th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.env-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border2);
+  vertical-align: top;
+  font-size: 12px;
+}
+
+.env-table tr:last-child td { border-bottom: none; }
+
+.env-key { color: var(--a-color); }
+.env-example { color: var(--muted); }
+.env-who { font-size: 10px; }
+.env-who.a { color: var(--a-color); }
+.env-who.b { color: var(--b-color); }
+
+/* ── BRANCH TABLE ── */
+.branch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.branch-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+}
+
+.branch-name {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.branch-name.a { color: var(--a-color); }
+.branch-name.b { color: var(--b-color); }
+.branch-name.main { color: var(--done-color); }
+
+.branch-desc { font-size: 13px; color: var(--muted); margin-bottom: 10px; }
+.branch-rule { font-size: 12px; color: var(--muted); display: flex; gap: 6px; margin-bottom: 4px; }
+.branch-rule::before { content: '—'; color: var(--muted2); }
+
+/* ── DEFINITION OF DONE ── */
+.dod-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.dod-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.dod-phase {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted2);
+  margin-bottom: 10px;
+}
+
+.dod-item {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+.dod-item::before { content: '□'; font-family: 'IBM Plex Mono', monospace; color: var(--muted2); flex-shrink: 0; }
+
+/* ── FOOTER ── */
+footer {
+  background: var(--text);
+  color: rgba(255,255,255,0.4);
+  padding: 32px 72px;
+  display: flex;
+  justify-content: space-between;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+footer strong { color: rgba(255,255,255,0.8); font-family: 'Fraunces', serif; font-size: 16px; font-weight: 800; }
+
+hr.section-hr {
+  border: none;
+  border-top: 2px dashed var(--border);
+  margin: 0 56px;
+}
+
+.sub-task {
+  padding-left: 20px;
+  border-left: 2px solid var(--border2);
+  margin: 6px 0 6px 5px;
+}
+
+.sub-task .task-title { font-size: 12px; font-weight: 400; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════ HEADER ══ -->
+<div class="master-header">
+  <div class="doc-type">OutARC · Master Todo + Workflow · v1.0</div>
+  <h1>Everything you need to build <em>OutARC</em></h1>
+  <p class="header-sub">Every task, broken into atomic steps. Who does what, when, and how. Git workflow, sync points, env setup, and definition of done.</p>
+  <div class="header-pills">
+    <div class="pill">3 Days</div>
+    <div class="pill a">● Person A — Frontend + OpenClaw</div>
+    <div class="pill b">● Person B — Backend + Playwright</div>
+    <div class="pill">~85 tasks total</div>
+    <div class="pill">6 sync checkpoints</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════ STATS BAR ══ -->
+<div class="stats-bar">
+  <div class="legend-item"><div class="legend-dot" style="background: var(--a-color)"></div> Person A (Frontend + AI)</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--b-color)"></div> Person B (Backend + Automation)</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--done-color)"></div> Shared / Together</div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><strong>Day 1</strong> Foundation</div>
+  <div class="stat-item"><strong>Day 2</strong> Intelligence</div>
+  <div class="stat-item"><strong>Day 3</strong> Ship It</div>
+  <div class="stat-divider"></div>
+  <div class="stat-item"><strong>6</strong> sync checkpoints</div>
+  <div class="stat-item"><strong>4</strong> integration moments</div>
+</div>
+
+<div class="layout">
+
+<!-- ══════════════════════════════════ SIDEBAR ══ -->
+<nav class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Before you start</div>
+    <a class="sidebar-link active" href="#setup">⚙️ Day 0 Setup <span class="count">10</span></a>
+    <a class="sidebar-link" href="#git">🌿 Git Workflow <span class="count">8</span></a>
+    <a class="sidebar-link" href="#env">🔑 Env Variables <span class="count">12</span></a>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Day 1 — Foundation</div>
+    <a class="sidebar-link" href="#d1a">Person A <span class="count">18</span></a>
+    <a class="sidebar-link" href="#d1b">Person B <span class="count">18</span></a>
+    <a class="sidebar-link" href="#d1sync">🔄 Sync: EOD1 <span class="count">5</span></a>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Day 2 — Intelligence</div>
+    <a class="sidebar-link" href="#d2a">Person A <span class="count">16</span></a>
+    <a class="sidebar-link" href="#d2b">Person B <span class="count">16</span></a>
+    <a class="sidebar-link" href="#d2sync">🔄 Sync: EOD2 <span class="count">5</span></a>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Day 3 — Ship It</div>
+    <a class="sidebar-link" href="#d3">Day 3 Together <span class="count">20</span></a>
+    <a class="sidebar-link" href="#deploy">🚀 Deploy Checklist <span class="count">12</span></a>
+    <a class="sidebar-link" href="#demo">🎤 Demo Script <span class="count">8</span></a>
+  </div>
+  <div class="sidebar-divider"></div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Reference</div>
+    <a class="sidebar-link" href="#dod">✅ Definition of Done</a>
+    <a class="sidebar-link" href="#workflow">🔄 Full Workflow</a>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════ MAIN ══ -->
+<main class="main">
+
+<!-- ──────────── DAY 0: SETUP ──────────── -->
+<section id="setup" class="day-section" style="padding-top: 40px;">
+
+  <div class="day-header">
+    <div class="day-badge d1">0</div>
+    <div class="day-info">
+      <div class="day-title">Day 0 — Before You Write a Single Line</div>
+      <div class="day-subtitle">DO THIS TOGETHER · ~45 minutes · Do it in the same room or on a call</div>
+    </div>
+  </div>
+
+  <div class="sync-block">
+    <div class="sync-title">⚡ Why Day 0 matters</div>
+    <div class="sync-item">If you skip setup and both start coding, you will spend Day 1 debugging merge conflicts and mismatched env files instead of shipping features.</div>
+    <div class="sync-item">One person runs every command below. The other watches and asks questions. You should both understand the full stack before splitting up.</div>
+  </div>
+
+  <div class="persons-grid">
+    <div class="person-col">
+      <div class="person-header-bar a">
+        <div class="person-avatar a">A</div>
+        <div class="person-name a">Person A</div>
+        <div class="person-role">Does the typing</div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🗂️ Repo + Org Setup</div>
+
+        <div class="task shared">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create GitHub org: <code>getoutarc</code></div>
+            <div class="task-detail">github.com → profile → Your organizations → New organization → Free plan → name it <code>getoutarc</code>. Invite Person B as Owner.</div>
+            <div class="task-tags"><span class="task-tag easy">easy</span><span class="task-tag shared2">together</span></div>
+          </div>
+        </div>
+
+        <div class="task shared">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Init Next.js repo inside org</div>
+            <div class="task-detail">Run: <code>npx create-next-app@latest OutARC --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"</code>. Push to <code>getoutarc/OutARC</code> as <code>main</code> branch.</div>
+            <div class="task-tags"><span class="task-tag shared2">together</span></div>
+          </div>
+        </div>
+
+        <div class="task shared">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Both clone the repo locally</div>
+            <div class="task-detail"><code>git clone https://github.com/getoutarc/OutARC.git</code> — both machines should have this open in Cursor before splitting up.</div>
+          </div>
+        </div>
+
+        <div class="task shared">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Set up branch protection on <code>main</code></div>
+            <div class="task-detail">Repo Settings → Branches → Add rule → Branch name: <code>main</code> → enable "Require pull request before merging." This forces PRs, prevents direct pushes breaking each other's work.</div>
+            <div class="task-tags"><span class="task-tag critical">important</span></div>
+          </div>
+        </div>
+
+        <div class="task shared">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Install core dependencies together</div>
+            <div class="task-detail">Run once: <code>npm install prisma @prisma/client next-auth @auth/prisma-adapter bullmq ioredis bcryptjs</code></div>
+          </div>
+        </div>
+
+        <div class="task shared">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Install shadcn/ui</div>
+            <div class="task-detail">Run: <code>npx shadcn-ui@latest init</code> → choose Default style, Slate base color, CSS variables: yes. Then add: <code>npx shadcn-ui@latest add button input label card table badge dialog toast</code></div>
+          </div>
+        </div>
+
+        <div class="task shared">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Commit: "chore: project bootstrap"</div>
+            <div class="task-detail">Person A pushes this initial commit to <code>main</code>. This is the only direct push to main allowed. After this, all work goes through branches and PRs.</div>
+            <div class="task-tags"><span class="task-tag critical">last direct push</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="person-col">
+      <div class="person-header-bar b">
+        <div class="person-avatar b">B</div>
+        <div class="person-name b">Person B</div>
+        <div class="person-role">Sets up infra</div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">☁️ Services Setup</div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create Railway project</div>
+            <div class="task-detail">railway.app → New project → name it "outarc". Add two services: PostgreSQL and Redis. Railway auto-provisions both. Copy the connection strings from the Variables tab.</div>
+            <div class="task-tags"><span class="task-tag blocker">needed by A on Day 1</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create Vercel project + connect repo</div>
+            <div class="task-detail">vercel.com → New Project → Import from GitHub → select <code>getoutarc/OutARC</code>. Don't deploy yet. Just link it so env vars can be added later.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create Google OAuth credentials</div>
+            <div class="task-detail">console.cloud.google.com → New Project "outarc" → APIs & Services → Credentials → Create OAuth 2.0 Client ID → Web Application → Add authorized redirect: <code>http://localhost:3000/api/auth/callback/google</code>. Save Client ID + Secret.</div>
+            <div class="task-tags"><span class="task-tag blocker">A needs this for NextAuth</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create Discord webhook</div>
+            <div class="task-detail">In your Discord server: Server Settings → Integrations → Webhooks → New Webhook → name it "OutARC Bot" → assign to a channel → copy URL. This is <code>DISCORD_WEBHOOK_URL</code>.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create shared .env.local and share with A</div>
+            <div class="task-detail">Create the file locally (never commit it). Share via a private DM or password manager. Template is in the Env Variables section below. Both need the same values.</div>
+            <div class="task-tags"><span class="task-tag critical">never commit this file</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Install OpenClaw globally</div>
+            <div class="task-detail"><code>npm install -g openclaw@latest</code> then <code>openclaw onboard --install-daemon</code>. Do this on the machine that will run the worker (likely B's machine or a VPS).</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ──────────── GIT WORKFLOW ──────────── -->
+<section id="git" class="full-section">
+  <h2>Git Workflow</h2>
+  <div class="section-sub">How you stay in sync without stepping on each other. Follow this exactly — it takes 2 minutes per PR and saves hours of conflict hell.</div>
+
+  <div class="branch-grid">
+    <div class="branch-card">
+      <div class="branch-name main">main</div>
+      <div class="branch-desc">Production-ready code only. Protected. Never push directly.</div>
+      <div class="branch-rule">Only accepts PRs from <code>dev</code></div>
+      <div class="branch-rule">Must pass lint before merging</div>
+      <div class="branch-rule">Auto-deploys to Vercel on merge</div>
+    </div>
+    <div class="branch-card">
+      <div class="branch-name" style="color: var(--day2);">dev</div>
+      <div class="branch-desc">Integration branch. Both persons merge feature branches here.</div>
+      <div class="branch-rule">This is your daily working branch</div>
+      <div class="branch-rule">Merge here at end of each day</div>
+      <div class="branch-rule">Sync point for both persons</div>
+    </div>
+    <div class="branch-card">
+      <div class="branch-name a">feat/a-[feature]</div>
+      <div class="branch-desc">Person A's feature branches. Branch from dev, PR back to dev.</div>
+      <div class="branch-rule">Examples: <code>feat/a-auth</code>, <code>feat/a-dashboard</code></div>
+      <div class="branch-rule">One branch per major feature</div>
+      <div class="branch-rule">Delete after merge</div>
+    </div>
+    <div class="branch-card">
+      <div class="branch-name b">feat/b-[feature]</div>
+      <div class="branch-desc">Person B's feature branches. Branch from dev, PR back to dev.</div>
+      <div class="branch-rule">Examples: <code>feat/b-prisma</code>, <code>feat/b-playwright</code></div>
+      <div class="branch-rule">One branch per major feature</div>
+      <div class="branch-rule">Delete after merge</div>
+    </div>
+  </div>
+
+  <div style="margin-top: 24px;">
+    <div class="code-snip">
+<span class="cmt"># Standard workflow for every feature (run this every time)</span>
+
+<span class="cmt"># 1. Start fresh from dev</span>
+git checkout dev
+git pull origin dev
+
+<span class="cmt"># 2. Create your feature branch</span>
+git checkout -b feat/a-dashboard   <span class="cmt"># or feat/b-prisma, etc.</span>
+
+<span class="cmt"># 3. Work, commit often (every ~45 min)</span>
+git add .
+git commit -m <span class="str">"feat: add dashboard layout with sidebar"</span>
+
+<span class="cmt"># 4. Push and open PR to dev (NOT main)</span>
+git push origin feat/a-dashboard
+<span class="cmt"># GitHub → open PR from feat/a-dashboard → dev</span>
+<span class="cmt"># Other person reviews, approves, merges</span>
+
+<span class="cmt"># 5. Delete branch after merge</span>
+git branch -d feat/a-dashboard
+    </div>
+  </div>
+
+  <div class="note-block" style="margin-top: 16px;">
+    <strong>Commit message format:</strong> <code>feat: [what you added]</code> · <code>fix: [what you fixed]</code> · <code>chore: [setup/config]</code> · <code>wip: [incomplete, don't review]</code>. Keep them short and specific. "fix stuff" is not acceptable.
+  </div>
+</section>
+
+<!-- ──────────── ENV VARS ──────────── -->
+<section id="env" class="full-section">
+  <h2>Environment Variables</h2>
+  <div class="section-sub">Every variable you'll need. Person B creates Railway + Google OAuth; Person A uses them. Never commit <code>.env.local</code>.</div>
+
+  <table class="env-table">
+    <thead>
+      <tr>
+        <th>Variable</th>
+        <th>Example Value</th>
+        <th>Who Sets It</th>
+        <th>Where To Get It</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="env-key">DATABASE_URL</td>
+        <td class="env-example">postgresql://user:pass@host:5432/outarc</td>
+        <td class="env-who b">B</td>
+        <td>Railway → PostgreSQL → Variables tab</td>
+      </tr>
+      <tr>
+        <td class="env-key">REDIS_URL</td>
+        <td class="env-example">redis://default:pass@host:6379</td>
+        <td class="env-who b">B</td>
+        <td>Railway → Redis → Variables tab</td>
+      </tr>
+      <tr>
+        <td class="env-key">NEXTAUTH_SECRET</td>
+        <td class="env-example">run: openssl rand -base64 32</td>
+        <td class="env-who b">B</td>
+        <td>Generate locally, share with A</td>
+      </tr>
+      <tr>
+        <td class="env-key">NEXTAUTH_URL</td>
+        <td class="env-example">http://localhost:3000</td>
+        <td class="env-who a">A</td>
+        <td>Hardcode for dev. Change to Vercel URL for prod.</td>
+      </tr>
+      <tr>
+        <td class="env-key">GOOGLE_CLIENT_ID</td>
+        <td class="env-example">123456789.apps.googleusercontent.com</td>
+        <td class="env-who b">B</td>
+        <td>Google Cloud Console → OAuth credentials</td>
+      </tr>
+      <tr>
+        <td class="env-key">GOOGLE_CLIENT_SECRET</td>
+        <td class="env-example">GOCSPX-...</td>
+        <td class="env-who b">B</td>
+        <td>Google Cloud Console → OAuth credentials</td>
+      </tr>
+      <tr>
+        <td class="env-key">AES_ENCRYPTION_KEY</td>
+        <td class="env-example">run: openssl rand -hex 32</td>
+        <td class="env-who b">B</td>
+        <td>Generate locally. Used to encrypt Handshake passwords.</td>
+      </tr>
+      <tr>
+        <td class="env-key">DISCORD_WEBHOOK_URL</td>
+        <td class="env-example">https://discord.com/api/webhooks/...</td>
+        <td class="env-who b">B</td>
+        <td>Discord → Server Settings → Integrations → Webhooks</td>
+      </tr>
+      <tr>
+        <td class="env-key">OPENCLAW_API_KEY</td>
+        <td class="env-example">mc-...</td>
+        <td class="env-who a">A</td>
+        <td>MiniMax platform → API Keys</td>
+      </tr>
+      <tr>
+        <td class="env-key">MINIMAX_MODEL</td>
+        <td class="env-example">MiniMax-Text-01</td>
+        <td class="env-who a">A</td>
+        <td>Check MiniMax docs for current model name</td>
+      </tr>
+      <tr>
+        <td class="env-key">WORKER_SECRET</td>
+        <td class="env-example">run: openssl rand -hex 20</td>
+        <td class="env-who b">B</td>
+        <td>Used to auth the worker process calling internal APIs</td>
+      </tr>
+      <tr>
+        <td class="env-key">NODE_ENV</td>
+        <td class="env-example">development</td>
+        <td>both</td>
+        <td>Set automatically by Next.js. "production" in Vercel.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<hr class="section-hr">
+
+<!-- ══════════════════════════════════
+     DAY 1
+══════════════════════════════════ -->
+<div id="d1a" class="day-section">
+  <div class="day-header">
+    <div class="day-badge d1">1</div>
+    <div class="day-info">
+      <div class="day-title">Day 1 — Foundation</div>
+      <div class="day-subtitle">Goal: Auth works. Dashboard exists. Prisma schema is migrated. Queue is scaffolded. Split up by 9am.</div>
+    </div>
+    <div class="day-progress">Target: 36 tasks · 8–10 hours</div>
+  </div>
+
+  <div class="persons-grid">
+
+    <!-- PERSON A DAY 1 -->
+    <div class="person-col">
+      <div class="person-header-bar a">
+        <div class="person-avatar a">A</div>
+        <div class="person-name a">Person A</div>
+        <div class="person-role">Frontend + Auth</div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🔐 Authentication</div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Install and configure NextAuth.js</div>
+            <div class="task-detail">Create <code>src/app/api/auth/[...nextauth]/route.ts</code>. Configure Google provider. Set <code>NEXTAUTH_SECRET</code> and <code>NEXTAUTH_URL</code> in <code>.env.local</code>.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Add @wisc.edu email guard</div>
+            <div class="task-detail">In NextAuth callbacks, add: <code>if (!user.email?.endsWith('@wisc.edu')) return false</code> inside the <code>signIn</code> callback. Test with a non-wisc email — should redirect to error page.</div>
+            <div class="task-tags"><span class="task-tag critical">security</span></div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create login page at <code>/login</code></div>
+            <div class="task-detail">Simple centered card. OutARC logo/wordmark at top. "Continue with Google" button using shadcn/ui Button. Footer text: "For UW–Madison students only." Use NextAuth's <code>signIn('google')</code> on button click.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create auth middleware for route protection</div>
+            <div class="task-detail">Create <code>src/middleware.ts</code> using NextAuth's <code>withAuth</code>. Protect all routes under <code>/dashboard/*</code>. Unauthenticated requests redirect to <code>/login</code>.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Wire NextAuth to Prisma adapter</div>
+            <div class="task-detail">Install <code>@auth/prisma-adapter</code>. Add adapter to NextAuth config: <code>adapter: PrismaAdapter(prisma)</code>. This auto-creates User, Account, Session tables in Postgres.</div>
+            <div class="task-tags"><span class="task-tag blocker">needs B's Prisma schema first</span></div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Test full login flow end-to-end</div>
+            <div class="task-detail">Run <code>npm run dev</code>. Go to /dashboard (should redirect to /login). Click "Continue with Google". Sign in with @wisc.edu account. Confirm redirect back to /dashboard. Check DB for User row.</div>
+            <div class="task-tags"><span class="task-tag easy">verify works</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🏠 App Shell + Layout</div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create root layout with sidebar navigation</div>
+            <div class="task-detail">Create <code>src/app/(dashboard)/layout.tsx</code>. Sidebar with links: Dashboard, Profile, Filters, History, Settings. Show user avatar + name from session. Include logout button.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Dashboard home page <code>/dashboard</code></div>
+            <div class="task-detail">Three stat cards: Applications Today, Total Applied, Success Rate. Recent Applications table (empty state for now with placeholder). "Start Applying" CTA button (wired up Day 3).</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Profile page <code>/dashboard/profile</code></div>
+            <div class="task-detail">Form fields: Full Name, Major, Graduation Year (select), LinkedIn URL, GitHub URL. Save button calls <code>PUT /api/profile</code>. Show success toast on save using shadcn/ui toast.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Resume upload section on profile page</div>
+            <div class="task-detail">Drag-and-drop zone (accept PDF only, max 5MB). On upload: POST to <code>/api/resume</code> (multipart form). Show uploaded filename and "Active" badge. Allow deleting and re-uploading.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Handshake credentials section on profile page</div>
+            <div class="task-detail">Two password-type inputs: Handshake Email, Handshake Password. "Save Credentials" button calls <code>PUT /api/handshake-creds</code>. Show a lock icon and "Encrypted & stored securely" note. Never display saved password again.</div>
+            <div class="task-tags"><span class="task-tag critical">security UX</span></div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Job Filters page <code>/dashboard/filters</code></div>
+            <div class="task-detail">Fields: Keywords (multi-tag input, e.g. "SWE", "ML intern"), Exclude Companies (multi-tag), Role Types (checkboxes: Full-time, Part-time, Intern), Max Applications Per Day (number input 1–20), Toggle: Is Filter Active.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Application History page <code>/dashboard/history</code></div>
+            <div class="task-detail">Table with columns: Date, Job Title, Company, Status (badge), Cover Letter (expand button), Handshake Link. Empty state: "No applications yet. Set up your filters and start applying." Paginate at 20 rows.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">📡 API Routes (Frontend Side)</div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">GET + PUT <code>/api/profile</code></div>
+            <div class="task-detail">GET returns current user's profile from Prisma. PUT updates name, major, gradYear, linkedin, github fields. Validate with Zod schema before writing.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">POST <code>/api/resume</code> — file upload handler</div>
+            <div class="task-detail">Accept multipart/form-data. Validate: PDF only, max 5MB. Save file to <code>/public/resumes/[userId]/resume.pdf</code>. Parse text content using <code>pdf-parse</code> package. Save <code>parsedText</code> to DB.</div>
+            <div class="task-tags"><span class="task-tag blocker">OpenClaw skill needs parsedText</span></div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">GET + PUT <code>/api/filters</code></div>
+            <div class="task-detail">GET returns user's JobFilter row. PUT upserts it (create if not exists, update if exists). Return updated filter in response so UI can show confirmation.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSON B DAY 1 -->
+    <div class="person-col">
+      <div class="person-header-bar b">
+        <div class="person-avatar b">B</div>
+        <div class="person-name b">Person B</div>
+        <div class="person-role">Backend + Infrastructure</div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🐘 Prisma + Database</div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Initialize Prisma</div>
+            <div class="task-detail">Run <code>npx prisma init</code>. Set <code>DATABASE_URL</code> in <code>.env.local</code> to your Railway Postgres URL. Prisma creates <code>prisma/schema.prisma</code>.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Write full Prisma schema</div>
+            <div class="task-detail">Define all 4 models: <code>User</code> (id, email, name, major, gradYear, linkedin, github, handshakeCredEnc, createdAt), <code>Resume</code> (id, userId, filename, url, parsedText, isActive, uploadedAt), <code>JobFilter</code> (id, userId, keywords, excludeCompanies, roles, maxPerDay, isActive), <code>Application</code> (id, userId, jobTitle, company, handshakeUrl, coverLetterUsed, resumeBulletsUsed, status, appliedAt). Also include NextAuth models: Account, Session, VerificationToken.</div>
+            <div class="task-tags"><span class="task-tag critical">A needs this for auth adapter</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Run first migration</div>
+            <div class="task-detail"><code>npx prisma migrate dev --name init</code>. This creates all tables in Railway Postgres. Verify in Railway's database viewer that all tables exist.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create Prisma client singleton</div>
+            <div class="task-detail">Create <code>src/lib/prisma.ts</code>: export a single PrismaClient instance using the global singleton pattern (prevents too many connections in dev due to hot reload).</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">API route: PUT <code>/api/handshake-creds</code></div>
+            <div class="task-detail">Accept <code>{ email, password }</code> body. Encrypt password using AES-256-GCM with <code>AES_ENCRYPTION_KEY</code>. Store <code>{ email, encryptedPassword, iv }</code> as JSON in <code>user.handshakeCredEnc</code>. Return 200 on success, never echo back the password.</div>
+            <div class="task-tags"><span class="task-tag critical">security</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create AES encryption utility</div>
+            <div class="task-detail">Create <code>src/lib/encrypt.ts</code>. Export <code>encrypt(text: string): string</code> and <code>decrypt(ciphertext: string): string</code>. Use Node's <code>crypto</code> module with AES-256-GCM, random IV per encryption. Store as base64.</div>
+            <div class="task-tags"><span class="task-tag critical">used by worker too</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">📬 BullMQ Queue</div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create queue definition</div>
+            <div class="task-detail">Create <code>src/lib/queue.ts</code>. Define <code>applicationQueue</code> using BullMQ's Queue class. Connect to Redis via <code>REDIS_URL</code>. Export the queue instance.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Define job data TypeScript interface</div>
+            <div class="task-detail">Export <code>interface ApplicationJob { userId: string; jobTitle: string; company: string; jobDescription: string; handshakeUrl: string; }</code>. All queue jobs must match this shape.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">POST <code>/api/jobs/trigger</code> — enqueue a run</div>
+            <div class="task-detail">Triggered by frontend "Start Applying" button. Reads user's active filter from DB. Enqueues a <code>SCRAPE_AND_APPLY</code> job. Rate limit: if user already has 5 queued/active jobs, return 429. Return job ID in response.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">GET <code>/api/jobs/status</code> — queue status</div>
+            <div class="task-detail">Returns: <code>{ queued: number, active: number, completed: number, failed: number }</code> for the current user's jobs. Dashboard uses this to show live progress.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create worker entry file</div>
+            <div class="task-detail">Create <code>worker/index.ts</code>. Separate from the Next.js app — this runs as its own process on Railway. Import BullMQ Worker. Listen on the <code>application</code> queue. For now, just log the job data to confirm the queue is wired.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Test queue end-to-end locally</div>
+            <div class="task-detail">Run Next.js dev server AND the worker process simultaneously (two terminals). From a REST client (Postman/curl), hit <code>/api/jobs/trigger</code>. Confirm job appears in Redis, gets picked up by worker, gets logged.</div>
+            <div class="task-tags"><span class="task-tag easy">verify wiring</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🦞 OpenClaw Bootstrap</div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Configure openclaw.json for MiniMax-M1</div>
+            <div class="task-detail">Create <code>openclaw.json</code> in project root. Set model to MiniMax-M1 (check MiniMax docs for exact model string). Set <code>OPENCLAW_API_KEY</code> from env. Set max tokens to 2000 for skill responses.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create openclaw-skills directory</div>
+            <div class="task-detail">Create <code>openclaw-skills/</code> at project root. Create <code>openclaw-skills/tailor.skill.md</code> as an empty placeholder. Person A fills this on Day 2.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create worker/tailor.ts stub</div>
+            <div class="task-detail">Create <code>worker/tailor.ts</code>. Export <code>async function tailorApplication(jobData): Promise&lt;{coverLetter: string, resumeBullets: ...}&gt;</code>. For now, return mock hardcoded data. Person A replaces with real OpenClaw call on Day 2.</div>
+            <div class="task-tags"><span class="task-tag shared2">A replaces this Day 2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- END OF DAY 1 SYNC -->
+  <div id="d1sync" class="sync-block" style="margin-top: 8px;">
+    <div class="sync-title">🔄 Sync Checkpoint — End of Day 1 (~6pm)</div>
+    <div class="sync-item"><strong>Both merge branches to dev.</strong> Person A merges <code>feat/a-auth</code> and <code>feat/a-dashboard</code>. Person B merges <code>feat/b-prisma</code> and <code>feat/b-queue</code>.</div>
+    <div class="sync-item"><strong>Run the app together.</strong> <code>git pull origin dev</code> on both machines. <code>npm run dev</code>. Log in with @wisc.edu Google account. Confirm you hit the dashboard and a User row appears in Railway Postgres.</div>
+    <div class="sync-item"><strong>Handoff.</strong> B shares the Prisma schema with A verbally — walk through every field. A shares the API route signatures so B knows what to call from the worker.</div>
+    <div class="sync-item"><strong>Day 1 is DONE when:</strong> Login works → Dashboard loads → Profile form saves to DB → Queue accepts a job → Worker logs the job data.</div>
+    <div class="sync-item"><strong>Blockers?</strong> If auth isn't working, A stays on it tonight. If Prisma migration failed, B fixes it before Day 2 starts.</div>
+  </div>
+</div>
+
+<hr class="section-hr">
+
+<!-- ══════════════════════════════════
+     DAY 2
+══════════════════════════════════ -->
+<div id="d2a" class="day-section">
+  <div class="day-header">
+    <div class="day-badge d2">2</div>
+    <div class="day-info">
+      <div class="day-title">Day 2 — Intelligence</div>
+      <div class="day-subtitle">Goal: OpenClaw skill tailors a real cover letter. Playwright logs into Handshake and submits one real application.</div>
+    </div>
+    <div class="day-progress">Target: 32 tasks · 8–10 hours</div>
+  </div>
+
+  <div class="persons-grid">
+
+    <!-- PERSON A DAY 2 -->
+    <div class="person-col">
+      <div class="person-header-bar a">
+        <div class="person-avatar a">A</div>
+        <div class="person-name a">Person A</div>
+        <div class="person-role">OpenClaw Skill + Preview UI</div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🦞 OpenClaw Skill</div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Write <code>tailor.skill.md</code> — the full prompt</div>
+            <div class="task-detail">The skill takes: job_title, company, job_description, resume_text, user_name, user_major. It must output strict JSON with two keys: <code>coverLetter</code> (string, max 300 words, 3 paragraphs) and <code>resumeBullets</code> (array of <code>{original, rewritten}</code>). Include explicit instructions: no generic openers, match JD keywords, don't invent metrics.</div>
+            <div class="task-tags"><span class="task-tag critical">core of OutARC</span></div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Test skill in OpenClaw chat with 5 real postings</div>
+            <div class="task-detail">Go to Handshake. Find 5 real internship postings. Paste each one into OpenClaw manually: <code>/skill tailor-application job_title="SWE Intern" company="Epic Systems" job_description="..." resume_text="..."</code>. Evaluate output quality. Tweak prompt if cover letters are generic.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Add JSON validation to skill output</div>
+            <div class="task-detail">The skill can occasionally return malformed JSON or add markdown backtick fences. Strip any <code>```json</code> wrapper with a regex. Use <code>JSON.parse</code> inside try/catch. If parse fails, retry the OpenClaw call once. If second attempt fails, mark job as FAILED in DB.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Implement <code>worker/tailor.ts</code> — replace the stub</div>
+            <div class="task-detail">Call OpenClaw programmatically using its Node.js API. Pass the skill name and all input parameters. Return the validated JSON output. Handle API errors (rate limit, timeout) with exponential backoff: retry after 2s, then 5s, then fail.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Test tailor.ts in isolation with mock job data</div>
+            <div class="task-detail">Create <code>worker/test-tailor.ts</code> with hardcoded job title, company, JD, and resume text. Run <code>npx ts-node worker/test-tailor.ts</code>. Confirm it returns a real cover letter with correct JSON structure.</div>
+            <div class="task-tags"><span class="task-tag easy">verify before integration</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🖥️ Cover Letter Preview UI</div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Cover Letter Preview modal component</div>
+            <div class="task-detail">shadcn/ui Dialog. Shows the generated cover letter text. Shows resume bullet rewrites side-by-side (original left, rewritten right). Include a "Copy to Clipboard" button. Trigger it from the History table "View" button.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Live status indicator on Dashboard</div>
+            <div class="task-detail">Poll <code>/api/jobs/status</code> every 5 seconds using <code>setInterval</code> (or SWR's refreshInterval). Show a pulsing green dot + "Applying..." when queue is active. Show "Idle" when queue is empty. Stop polling when tab is not focused.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Toast notifications for application events</div>
+            <div class="task-detail">When polling detects a new APPLIED status in history, show a toast: "✅ Applied to [Job Title] at [Company]". Use shadcn/ui toast. Stack up to 3 toasts.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSON B DAY 2 -->
+    <div class="person-col">
+      <div class="person-header-bar b">
+        <div class="person-avatar b">B</div>
+        <div class="person-name b">Person B</div>
+        <div class="person-role">Playwright + Worker Integration</div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🎭 Playwright — Handshake Automation</div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Install Playwright and browser binaries</div>
+            <div class="task-detail"><code>npm install playwright</code> then <code>npx playwright install chromium</code>. Install inside the <code>worker/</code> directory scope. Use Chromium only — no need for Firefox/WebKit.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Handshake login function with session cookie reuse</div>
+            <div class="task-detail">Create <code>worker/handshake-auth.ts</code>. First run: launch headed browser, log in with user credentials, save cookies to <code>/tmp/hs-session-[userId].json</code>. Subsequent runs: load saved cookies, check if session is still valid by hitting Handshake's home page. If invalid (redirected to login), re-authenticate.</div>
+            <div class="task-tags"><span class="task-tag critical">key anti-detection measure</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Anti-detection: randomized delays utility</div>
+            <div class="task-detail">Create <code>worker/utils/delays.ts</code>. Export: <code>humanDelay(min=800, max=3000)</code> — random ms delay with slight gaussian distribution (more likely middle values). <code>pageLoadDelay()</code> — 2–5s. <code>typingDelay(char)</code> — 50–150ms per character. Use these everywhere instead of hardcoded waits.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Handshake job scraper</div>
+            <div class="task-detail">Create <code>worker/handshake-scrape.ts</code>. Navigate to Handshake jobs page with user's filter keywords as query params. Extract from each listing: job title, company name, Handshake job URL, job description text. Return as array of job objects. Limit to first 10 results per run.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Filter already-applied jobs</div>
+            <div class="task-detail">Before queuing a job for application, check the DB: does an Application row exist with this <code>handshakeUrl</code> for this user? If yes, skip it. This prevents re-applying to the same job across multiple runs.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Handshake application submission function</div>
+            <div class="task-detail">Create <code>worker/handshake-apply.ts</code>. Navigate to job URL. Click "Apply". Handle multi-step apply forms: some require cover letter upload (create a PDF from the generated text), some have a text field (paste it). Attach resume PDF from <code>/public/resumes/[userId]/resume.pdf</code>. Click submit. Detect success confirmation page.</div>
+            <div class="task-tags"><span class="task-tag critical">hardest part of the project</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">CAPTCHA detection and graceful failure</div>
+            <div class="task-detail">After page navigation, check for common CAPTCHA indicators: <code>page.locator('[id*="captcha"]').count() > 0</code> or challenge frame iframes. If detected: mark job as FAILED with reason "captcha_detected". Send Discord notification: "⚠️ CAPTCHA hit on [Company] — needs manual apply." Continue queue.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Screenshot on failure for debugging</div>
+            <div class="task-detail">Wrap every Playwright action in try/catch. On any unexpected error: take a screenshot with <code>page.screenshot({ path: /tmp/hs-error-[timestamp].png })</code>. Log the screenshot path and the error to console. Don't crash the whole worker — catch and continue to next job.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🔗 Full Worker Pipeline Integration</div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Wire full pipeline in <code>worker/index.ts</code></div>
+            <div class="task-detail">BullMQ Worker processes each job in this order: (1) Fetch user + resume + filter from DB. (2) Decrypt Handshake credentials. (3) Authenticate with Handshake. (4) Scrape job listings matching filter. (5) For each job: call <code>tailorApplication()</code>, then <code>applyToJob()</code>, then <code>saveToHistory()</code>, then <code>notifyDiscord()</code>. (6) Respect 5 apps/hour rate limit.</div>
+            <div class="task-tags"><span class="task-tag critical">integration point</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Rate limiting: max 5 applications per hour</div>
+            <div class="task-detail">Before applying to each job, check: how many Applications with <code>appliedAt &gt; (now - 1 hour)</code> exist for this user? If count ≥ 5, use BullMQ's <code>moveToDelayed</code> to re-queue the job for 1 hour later. Log this as "Rate limit hit — re-queued."</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Save application to DB after success</div>
+            <div class="task-detail">After successful Playwright submission: create Application row with status=APPLIED, store coverLetterUsed (full text), store resumeBulletsUsed (JSON), set appliedAt=now. Update Application status to FAILED if Playwright throws.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Discord notification sender</div>
+            <div class="task-detail">Create <code>worker/notify.ts</code>. Function <code>notifyApplied(job)</code> POSTs to Discord webhook URL with embed: green color, title "✅ Applied", fields for Company, Role, Link, and which cover letter keywords were used. Function <code>notifyFailed(job, reason)</code> for failures with red color.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">End-to-end test: one real application</div>
+            <div class="task-detail">Find a real Handshake posting. Manually trigger one job through the queue. Watch the full pipeline execute in real-time: scrape → tailor → apply → save → Discord notification. This is the Day 2 milestone. Everything else is polish.</div>
+            <div class="task-tags"><span class="task-tag critical">day 2 milestone</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- END OF DAY 2 SYNC -->
+  <div id="d2sync" class="sync-block" style="margin-top: 8px;">
+    <div class="sync-title">🔄 Sync Checkpoint — End of Day 2 (~6pm)</div>
+    <div class="sync-item"><strong>Integration test together.</strong> Trigger one full application from the dashboard UI. Watch: frontend → API → queue → worker → OpenClaw → Playwright → Handshake → DB → Discord. Every step should produce visible output.</div>
+    <div class="sync-item"><strong>Cover letter review.</strong> Look at the generated cover letter together. Is it good enough to actually send? If it's generic or has hallucinated metrics, iterate on the skill prompt tonight.</div>
+    <div class="sync-item"><strong>Playwright review.</strong> Did Handshake detect anything suspicious? Were there any selector failures? Note every failure mode — Day 3 morning you'll add better error handling.</div>
+    <div class="sync-item"><strong>Day 2 is DONE when:</strong> One real application was submitted on Handshake. Discord notification was received. Application appears in history page.</div>
+  </div>
+</div>
+
+<hr class="section-hr">
+
+<!-- ══════════════════════════════════
+     DAY 3
+══════════════════════════════════ -->
+<div id="d3" class="day-section">
+  <div class="day-header">
+    <div class="day-badge d3">3</div>
+    <div class="day-info">
+      <div class="day-title">Day 3 — Ship It</div>
+      <div class="day-subtitle">Goal: Deployed. Demo-ready. Everything polished enough to show a recruiter or professor.</div>
+    </div>
+    <div class="day-progress">Work together · 8 hours · deploy by 5pm</div>
+  </div>
+
+  <div class="persons-grid">
+
+    <div class="person-col">
+      <div class="person-header-bar a">
+        <div class="person-avatar a">A</div>
+        <div class="person-name a">Person A</div>
+        <div class="person-role">Landing Page + Polish</div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🌐 Landing Page</div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Create <code>/</code> landing page</div>
+            <div class="task-detail">Hero section: "OutARC — Apply to internships on autopilot." Subheadline: "Tailors your resume and cover letter to each job. Then applies for you." Two CTAs: "Get Started" (→ /login) and "See How It Works" (smooth scroll to demo section).</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">How It Works section on landing page</div>
+            <div class="task-detail">3-step flow with icons: (1) Upload your resume + set filters. (2) OutARC tailors each application with AI. (3) Wake up to applications sent. Use clean card layout. Keep copy tight.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Example Discord notification mockup on landing page</div>
+            <div class="task-detail">Show a static mockup of the Discord notification card. This is the wow moment for the landing page — "here's what you wake up to." Use the actual Discord embed styling (dark card, green left border).</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">✨ Dashboard Polish</div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Empty states for all pages</div>
+            <div class="task-detail">Every table and list needs a good empty state. Profile: "Complete your profile to start applying." Filters: "Add keywords to get started." History: "No applications yet — applications will appear here automatically."</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Loading states and skeleton screens</div>
+            <div class="task-detail">Use shadcn/ui Skeleton component for: Dashboard stats cards (while fetching), History table rows (while paginating), Profile form (while loading). Prevents layout shift.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Error boundary and 404 page</div>
+            <div class="task-detail">Create <code>src/app/error.tsx</code> for unexpected errors. Create <code>src/app/not-found.tsx</code> for 404s. Both should have an OutARC header and link back to dashboard.</div>
+          </div>
+        </div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Final responsive check</div>
+            <div class="task-detail">Open Chrome DevTools → device toolbar. Check Dashboard, Profile, History at 375px (iPhone), 768px (tablet), 1440px (desktop). Fix any overflow or broken layouts. Priority is desktop since this is a power-user tool.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">📝 README</div>
+
+        <div class="task a">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Write README.md for the GitHub repo</div>
+            <div class="task-detail">Sections: What is OutARC, Tech Stack, Architecture diagram (link to plan doc), Local Setup instructions (env vars, npm install, prisma migrate, run dev + worker), Deploy instructions. Include a screenshot of the dashboard and the Discord notification.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="person-col">
+      <div class="person-header-bar b">
+        <div class="person-avatar b">B</div>
+        <div class="person-name b">Person B</div>
+        <div class="person-role">Deploy + Stability</div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🚀 Deployment</div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Add all env vars to Vercel</div>
+            <div class="task-detail">Vercel dashboard → project → Settings → Environment Variables. Add every variable from the Env Variables section above. Remember to change <code>NEXTAUTH_URL</code> to your Vercel URL (get it after first deploy). Add Google OAuth redirect URI for the Vercel domain too.</div>
+            <div class="task-tags"><span class="task-tag critical">easy to forget</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Deploy frontend to Vercel</div>
+            <div class="task-detail">Merge <code>dev</code> into <code>main</code>. Vercel auto-deploys. Watch the build log — fix any TypeScript errors that pass locally but fail in strict mode. Common issue: missing return type annotations. Fix and push again.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Run Prisma migration on production DB</div>
+            <div class="task-detail"><code>DATABASE_URL=[railway-prod-url] npx prisma migrate deploy</code>. This runs all pending migrations against the production database. Verify in Railway's DB viewer that all tables were created.</div>
+            <div class="task-tags"><span class="task-tag critical">do this before first prod login</span></div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Deploy worker to Railway as separate service</div>
+            <div class="task-detail">Railway → project → New Service → Deploy from GitHub → select OutARC repo → set start command to <code>npx ts-node worker/index.ts</code>. Add all env vars to the Railway service. Confirm worker picks up a test job from the production Redis queue.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Add Google OAuth redirect URI for production</div>
+            <div class="task-detail">Google Cloud Console → OAuth credentials → edit → add <code>https://your-app.vercel.app/api/auth/callback/google</code> to authorized redirect URIs. Takes a few minutes to propagate. Test login on production URL.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task-group">
+        <div class="task-group-title">🛡️ Stability + Production Hardening</div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">BullMQ retry + backoff configuration</div>
+            <div class="task-detail">When adding jobs to queue, set: <code>attempts: 3, backoff: { type: 'exponential', delay: 5000 }</code>. This auto-retries failed jobs 3 times with 5s → 10s → 20s delays. After 3 failures, job moves to failed state and Discord notification fires.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Worker crash recovery</div>
+            <div class="task-detail">Add process-level error handler: <code>process.on('uncaughtException', handler)</code> and <code>process.on('unhandledRejection', handler)</code>. Log the error and restart the worker process. On Railway, use a restart policy: always restart on crash with 5s delay.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Input sanitization on all API routes</div>
+            <div class="task-detail">Every API route that accepts user input should validate with Zod schemas. Especially: filter keywords (max 20 items, each max 50 chars), cover letter text shouldn't be blindly stored without length check. Prevents DB overflow.</div>
+          </div>
+        </div>
+
+        <div class="task b">
+          <div class="task-box"></div>
+          <div class="task-content">
+            <div class="task-title">Verify credentials are never logged</div>
+            <div class="task-detail">Search entire codebase for any <code>console.log</code> that could print user passwords, session tokens, or decrypted credentials. <code>grep -r "handshakeCredEnc\|password\|decrypt" worker/ src/</code> and review each result.</div>
+            <div class="task-tags"><span class="task-tag critical">security audit</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INTEGRATION BLOCK -->
+  <div class="integration-block" style="margin-top: 16px;">
+    <div class="integration-title">✅ Integration Checkpoint — 3pm Day 3</div>
+    <div class="integration-item">Production URL is live on Vercel and loads correctly</div>
+    <div class="integration-item">Login with @wisc.edu Google account works on prod</div>
+    <div class="integration-item">Profile save, resume upload, filter save all work on prod</div>
+    <div class="integration-item">Trigger one application from prod dashboard → Discord notification received</div>
+    <div class="integration-item">Application appears in History page on prod</div>
+    <div class="integration-item">Run the demo script once end-to-end before presenting</div>
+  </div>
+</div>
+
+<hr class="section-hr">
+
+<!-- ──────────── DEPLOY CHECKLIST ──────────── -->
+<section id="deploy" class="full-section">
+  <h2>Deploy Checklist</h2>
+  <div class="section-sub">Run through this in order before declaring OutARC live. Don't skip steps.</div>
+
+  <div class="persons-grid" style="margin-top: 20px;">
+    <div class="person-col">
+      <div class="person-header-bar b">
+        <div class="person-avatar b">B</div>
+        <div class="person-name b">Person B</div>
+        <div class="person-role">Infra</div>
+      </div>
+      <div class="task-group">
+        <div class="task-group-title">Infrastructure</div>
+        <div class="task b"><div class="task-box"></div><div class="task-content"><div class="task-title">Railway Postgres is running and accessible</div></div></div>
+        <div class="task b"><div class="task-box"></div><div class="task-content"><div class="task-title">Railway Redis is running and accessible</div></div></div>
+        <div class="task b"><div class="task-box"></div><div class="task-content"><div class="task-title">Prisma migrations ran on production DB</div></div></div>
+        <div class="task b"><div class="task-box"></div><div class="task-content"><div class="task-title">Worker deployed to Railway and running</div></div></div>
+        <div class="task b"><div class="task-box"></div><div class="task-content"><div class="task-title">Worker picks up a test queue job successfully</div></div></div>
+        <div class="task b"><div class="task-box"></div><div class="task-content"><div class="task-title">Discord webhook fires on application</div></div></div>
+      </div>
+    </div>
+
+    <div class="person-col">
+      <div class="person-header-bar a">
+        <div class="person-avatar a">A</div>
+        <div class="person-name a">Person A</div>
+        <div class="person-role">Frontend</div>
+      </div>
+      <div class="task-group">
+        <div class="task-group-title">Frontend</div>
+        <div class="task a"><div class="task-box"></div><div class="task-content"><div class="task-title">All env vars added to Vercel dashboard</div></div></div>
+        <div class="task a"><div class="task-box"></div><div class="task-content"><div class="task-title">Vercel build passes with zero TypeScript errors</div></div></div>
+        <div class="task a"><div class="task-box"></div><div class="task-content"><div class="task-title">Login with @wisc.edu works on prod URL</div></div></div>
+        <div class="task a"><div class="task-box"></div><div class="task-content"><div class="task-title">NEXTAUTH_URL updated to Vercel domain in Vercel env vars</div></div></div>
+        <div class="task a"><div class="task-box"></div><div class="task-content"><div class="task-title">Google OAuth prod redirect URI added to Google Console</div></div></div>
+        <div class="task a"><div class="task-box"></div><div class="task-content"><div class="task-title">Profile save, resume upload, filter save all work on prod</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── DEMO SCRIPT ──────────── -->
+<section id="demo" class="full-section">
+  <h2>Demo Script</h2>
+  <div class="section-sub">Run through this exactly when showing OutARC. Each step should take about 30 seconds. Total demo: ~5 minutes.</div>
+
+  <div class="workflow-steps" style="margin-top: 20px;">
+    <div class="wf-step">
+      <div class="wf-num shared">1</div>
+      <div class="wf-content">
+        <div class="wf-title">Start on the landing page</div>
+        <div class="wf-desc">Show the landing page briefly. Read the headline out loud: "Apply to internships on autopilot." Say: "We built this in 3 days. Let me show you how it works."</div>
+        <div class="wf-who shared">BOTH</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num a">2</div>
+      <div class="wf-content">
+        <div class="wf-title">Log in live</div>
+        <div class="wf-desc">Click "Get Started." Log in with your @wisc.edu Google account in real time. Say: "Only UW–Madison accounts work — it's built for us."</div>
+        <div class="wf-who a">PERSON A</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num a">3</div>
+      <div class="wf-content">
+        <div class="wf-title">Show the profile + resume</div>
+        <div class="wf-desc">Navigate to Profile. Show the uploaded resume. Show the job filters already configured. Say: "The AI reads your actual resume — not a generic template. It only rewrites what's relevant to the job."</div>
+        <div class="wf-who a">PERSON A</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num b">4</div>
+      <div class="wf-content">
+        <div class="wf-title">Trigger an application live</div>
+        <div class="wf-desc">Hit "Start Applying." Watch the live status indicator change to "Applying..." Say: "Right now, the agent is logging into Handshake, scraping matching jobs, and tailoring each one."</div>
+        <div class="wf-who b">PERSON B</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num shared">5</div>
+      <div class="wf-content">
+        <div class="wf-title">Show the Discord notification arrive</div>
+        <div class="wf-desc">Switch to Discord. Wait for the notification to arrive live. Read it out loud: company, role, cover letter keywords used. This is the wow moment — say nothing, let it land.</div>
+        <div class="wf-who shared">BOTH — silent moment</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num a">6</div>
+      <div class="wf-content">
+        <div class="wf-title">Show the generated cover letter</div>
+        <div class="wf-desc">Go to History. Click "View" on the new application. Show the cover letter — read the first two sentences. Say: "It matched our specific experience to their exact requirements. Not a template."</div>
+        <div class="wf-who a">PERSON A</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num shared">7</div>
+      <div class="wf-content">
+        <div class="wf-title">Close with the vision</div>
+        <div class="wf-desc">Say: "This runs while you sleep. Every morning you wake up with applications sent, each tailored to the role. OutARC — Apply, Resume, Cover letter." Pause. Done.</div>
+        <div class="wf-who shared">BOTH</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── DEFINITION OF DONE ──────────── -->
+<section id="dod" class="full-section">
+  <h2>Definition of Done</h2>
+  <div class="section-sub">OutARC is finished when every box below is checked.</div>
+
+  <div class="dod-grid">
+    <div class="dod-card">
+      <div class="dod-phase">Auth</div>
+      <div class="dod-item">@wisc.edu login works</div>
+      <div class="dod-item">Non-wisc email is rejected</div>
+      <div class="dod-item">Logout works</div>
+      <div class="dod-item">Session persists on refresh</div>
+    </div>
+    <div class="dod-card">
+      <div class="dod-phase">Profile</div>
+      <div class="dod-item">Resume PDF uploads successfully</div>
+      <div class="dod-item">Text is extracted from PDF</div>
+      <div class="dod-item">Handshake creds saved encrypted</div>
+      <div class="dod-item">Job filters save and load</div>
+    </div>
+    <div class="dod-card">
+      <div class="dod-phase">AI Tailoring</div>
+      <div class="dod-item">Cover letter is specific to company</div>
+      <div class="dod-item">No hallucinated metrics</div>
+      <div class="dod-item">JSON output parses correctly</div>
+      <div class="dod-item">Retry on parse failure</div>
+    </div>
+    <div class="dod-card">
+      <div class="dod-phase">Playwright</div>
+      <div class="dod-item">Logs into Handshake successfully</div>
+      <div class="dod-item">Scrapes job listings</div>
+      <div class="dod-item">Submits application end-to-end</div>
+      <div class="dod-item">CAPTCHA handled gracefully</div>
+    </div>
+    <div class="dod-card">
+      <div class="dod-phase">Notifications</div>
+      <div class="dod-item">Discord notif fires on success</div>
+      <div class="dod-item">Discord notif fires on failure</div>
+      <div class="dod-item">History page shows all apps</div>
+      <div class="dod-item">Cover letter viewable in history</div>
+    </div>
+    <div class="dod-card">
+      <div class="dod-phase">Deploy</div>
+      <div class="dod-item">Frontend live on Vercel</div>
+      <div class="dod-item">Worker running on Railway</div>
+      <div class="dod-item">Production login works</div>
+      <div class="dod-item">One real end-to-end test on prod</div>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────── FULL WORKFLOW REFERENCE ──────────── -->
+<section id="workflow" class="full-section">
+  <h2>Full Workflow Reference</h2>
+  <div class="section-sub">How data flows from the user clicking "Start Applying" to an application being submitted. Reference this when debugging.</div>
+
+  <div class="workflow-steps" style="margin-top: 20px;">
+    <div class="wf-step">
+      <div class="wf-num a">1</div>
+      <div class="wf-content">
+        <div class="wf-title">User clicks "Start Applying" on dashboard</div>
+        <div class="wf-desc">Frontend calls <code>POST /api/jobs/trigger</code>. API reads user's active JobFilter from DB. Validates user has: uploaded resume, saved Handshake creds, at least one keyword. If missing, returns 400 with specific error message.</div>
+        <div class="wf-who a">PERSON A (API route)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num b">2</div>
+      <div class="wf-content">
+        <div class="wf-title">Job is added to BullMQ queue</div>
+        <div class="wf-desc">API creates a queue job with: userId, filter settings, timestamp. Returns jobId to frontend. Frontend uses jobId to poll status. Queue job waits in Redis until the worker picks it up.</div>
+        <div class="wf-who b">PERSON B (queue)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num b">3</div>
+      <div class="wf-content">
+        <div class="wf-title">Worker picks up the job</div>
+        <div class="wf-desc">BullMQ worker receives the job from Redis. Fetches full user record from Postgres including encrypted Handshake credentials. Decrypts credentials using AES-256 key from env.</div>
+        <div class="wf-who b">PERSON B (worker)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num b">4</div>
+      <div class="wf-content">
+        <div class="wf-title">Playwright authenticates with Handshake</div>
+        <div class="wf-desc">Launches Chromium in headed mode. Loads saved session cookies. Checks if session is valid. If not: navigates to login page, fills in credentials with human-like typing delays, submits form, saves new cookies.</div>
+        <div class="wf-who b">PERSON B (Playwright)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num b">5</div>
+      <div class="wf-content">
+        <div class="wf-title">Playwright scrapes matching job listings</div>
+        <div class="wf-desc">Navigates to Handshake jobs with user's keyword filters. Extracts: job title, company, URL, description for each listing. Cross-references DB to skip already-applied jobs. Returns up to 10 new job objects.</div>
+        <div class="wf-who b">PERSON B (Playwright)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num a">6</div>
+      <div class="wf-content">
+        <div class="wf-title">OpenClaw tailors each application</div>
+        <div class="wf-desc">For each job: calls the <code>tailor-application</code> OpenClaw skill with job description + user's parsed resume text. MiniMax-M1 generates a targeted cover letter and rewrites up to 3 resume bullets. Output is validated as JSON.</div>
+        <div class="wf-who a">PERSON A (OpenClaw skill)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num b">7</div>
+      <div class="wf-content">
+        <div class="wf-title">Playwright submits the application</div>
+        <div class="wf-desc">Navigates to job posting URL. Clicks Apply. Handles the application form: attaches resume PDF, fills cover letter field (or uploads PDF of cover letter), adds any additional required fields. Submits with randomized delays between each action.</div>
+        <div class="wf-who b">PERSON B (Playwright)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num b">8</div>
+      <div class="wf-content">
+        <div class="wf-title">Application saved to database</div>
+        <div class="wf-desc">Creates Application row in Postgres: status=APPLIED, stores full cover letter text, stores resume bullet rewrites as JSON, records timestamp. Updates dashboard stats (applications today counter increments).</div>
+        <div class="wf-who b">PERSON B (worker)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num b">9</div>
+      <div class="wf-content">
+        <div class="wf-title">Discord notification fires</div>
+        <div class="wf-desc">Sends embedded message to Discord webhook: green color, "✅ Applied", job title, company, link, cover letter keywords used. User sees it immediately on their phone if Discord is installed.</div>
+        <div class="wf-who b">PERSON B (worker)</div>
+      </div>
+    </div>
+    <div class="wf-step">
+      <div class="wf-num a">10</div>
+      <div class="wf-content">
+        <div class="wf-title">Dashboard updates in real time</div>
+        <div class="wf-desc">Frontend polling detects new APPLIED entry in <code>/api/jobs/status</code> response. Stats cards update. Toast notification appears: "✅ Applied to [Job] at [Company]." History table shows new row.</div>
+        <div class="wf-who a">PERSON A (frontend polling)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <div><strong>OutARC</strong></div>
+  <div>github.com/getoutarc/OutARC · Built on OpenClaw + MiniMax-M1</div>
+  <div>Master Todo v1.0 · March 2026</div>
+</footer>
+
+</body>
+</html>
